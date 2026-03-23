@@ -1,5 +1,11 @@
 import { useState, useCallback, useRef } from "react";
 
+export type Zone = "A" | "B" | "C";
+export type ViewRole = "operator" | "manager";
+export type AlertState = "active" | "acknowledged" | "resolved";
+export type MicHealth = "healthy" | "degraded" | "offline";
+export type MicConnectivity = "online" | "intermittent" | "offline";
+
 export interface Machine {
   id: string;
   name: string;
@@ -8,21 +14,43 @@ export interface Machine {
   status: "normal" | "anomaly";
   dbLevel: number;
   position: { x: number; y: number };
+  zone: Zone;
+}
+
+export interface Microphone {
+  id: string;
+  name: string;
+  zone: Zone;
+  health: MicHealth;
+  battery: number;
+  connectivity: MicConnectivity;
+  lastCalibration: string;
 }
 
 export interface LogEntry {
   id: string;
   time: string;
   message: string;
-  type: "normal" | "anomaly" | "info";
+  type: "normal" | "anomaly" | "info" | "sensor";
+  alertState?: AlertState;
+  operatorNote?: string;
 }
 
 const INITIAL_MACHINES: Machine[] = [
-  { id: "m1", name: "Excavator #1", type: "excavator", icon: "🏗️", status: "normal", dbLevel: 72, position: { x: 20, y: 30 } },
-  { id: "m2", name: "Crane #2", type: "crane", icon: "🏗️", status: "normal", dbLevel: 65, position: { x: 60, y: 20 } },
-  { id: "m3", name: "Bulldozer #3", type: "bulldozer", icon: "🚜", status: "normal", dbLevel: 78, position: { x: 40, y: 60 } },
-  { id: "m4", name: "Loader #4", type: "loader", icon: "🚛", status: "normal", dbLevel: 68, position: { x: 75, y: 55 } },
-  { id: "m5", name: "Compactor #5", type: "compactor", icon: "🔧", status: "normal", dbLevel: 70, position: { x: 15, y: 70 } },
+  { id: "m1", name: "Excavator #1", type: "excavator", icon: "hardhat", status: "normal", dbLevel: 72, position: { x: 20, y: 30 }, zone: "A" },
+  { id: "m2", name: "Crane #2", type: "crane", icon: "crane", status: "normal", dbLevel: 65, position: { x: 60, y: 20 }, zone: "B" },
+  { id: "m3", name: "Bulldozer #3", type: "bulldozer", icon: "tractor", status: "normal", dbLevel: 78, position: { x: 40, y: 60 }, zone: "A" },
+  { id: "m4", name: "Loader #4", type: "loader", icon: "truck", status: "normal", dbLevel: 68, position: { x: 75, y: 55 }, zone: "B" },
+  { id: "m5", name: "Compactor #5", type: "compactor", icon: "wrench", status: "normal", dbLevel: 70, position: { x: 15, y: 70 }, zone: "C" },
+];
+
+const INITIAL_MICROPHONES: Microphone[] = [
+  { id: "mic1", name: "Mic A – North Edge", zone: "A", health: "healthy", battery: 85, connectivity: "online", lastCalibration: "2026-03-20" },
+  { id: "mic2", name: "Mic B – East Side", zone: "A", health: "healthy", battery: 72, connectivity: "online", lastCalibration: "2026-03-18" },
+  { id: "mic3", name: "Mic C – South Edge", zone: "B", health: "degraded", battery: 45, connectivity: "intermittent", lastCalibration: "2026-03-15" },
+  { id: "mic4", name: "Mic D – West Side", zone: "B", health: "healthy", battery: 91, connectivity: "online", lastCalibration: "2026-03-21" },
+  { id: "mic5", name: "Mic E – Center", zone: "C", health: "healthy", battery: 22, connectivity: "online", lastCalibration: "2026-03-19" },
+  { id: "mic6", name: "Mic F – North Side", zone: "C", health: "offline", battery: 5, connectivity: "offline", lastCalibration: "2026-03-10" },
 ];
 
 const getTimeString = () => {
@@ -32,17 +60,36 @@ const getTimeString = () => {
 
 export function useDashboardState() {
   const [machines, setMachines] = useState<Machine[]>(INITIAL_MACHINES);
+  const [microphones, setMicrophones] = useState<Microphone[]>(INITIAL_MICROPHONES);
   const [logs, setLogs] = useState<LogEntry[]>([
     { id: "init", time: getTimeString(), message: "System initialized — All machines nominal", type: "info" },
   ]);
   const [anomalyMachineId, setAnomalyMachineId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [confidence, setConfidence] = useState(0);
+  const [selectedZone, setSelectedZone] = useState<Zone | "all">("all");
+  const [viewRole, setViewRole] = useState<ViewRole>("operator");
+  const [temperature] = useState(42);
+  const [avgNoise, setAvgNoise] = useState(87);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const replayTimeoutRef = useRef<number | null>(null);
 
-  const addLog = useCallback((message: string, type: LogEntry["type"]) => {
-    setLogs((prev) => [{ id: crypto.randomUUID(), time: getTimeString(), message, type }, ...prev].slice(0, 50));
+  const addLog = useCallback((message: string, type: LogEntry["type"], alertState?: AlertState) => {
+    setLogs((prev) => [{ id: crypto.randomUUID(), time: getTimeString(), message, type, alertState }, ...prev].slice(0, 50));
+  }, []);
+
+  const acknowledgeAlert = useCallback((logId: string, note?: string) => {
+    setLogs((prev) =>
+      prev.map((l) =>
+        l.id === logId ? { ...l, alertState: "acknowledged" as AlertState, operatorNote: note || l.operatorNote } : l
+      )
+    );
+  }, []);
+
+  const resolveAlert = useCallback((logId: string) => {
+    setLogs((prev) =>
+      prev.map((l) => (l.id === logId ? { ...l, alertState: "resolved" as AlertState } : l))
+    );
   }, []);
 
   const getAudioCtx = () => {
@@ -73,12 +120,20 @@ export function useDashboardState() {
     osc.stop(ctx.currentTime + 1);
   };
 
+  // Compute mic-based confidence reduction
+  const getMicConfidenceReduction = useCallback((zone?: Zone) => {
+    const zoneMics = zone ? microphones.filter((m) => m.zone === zone) : microphones;
+    const offlineOrLow = zoneMics.filter((m) => m.health === "offline" || m.battery < 30);
+    return offlineOrLow.length * 5; // reduce confidence by 5% per degraded mic
+  }, [microphones]);
+
   const triggerNormal = useCallback(() => {
     setIsPlaying(true);
     playSound(false);
     setMachines(INITIAL_MACHINES.map((m) => ({ ...m, dbLevel: 65 + Math.random() * 15 })));
     setAnomalyMachineId(null);
     setConfidence(0);
+    setAvgNoise(75 + Math.floor(Math.random() * 15));
     addLog("Normal sound played — All systems nominal", "normal");
     setTimeout(() => setIsPlaying(false), 1000);
   }, [addLog]);
@@ -94,10 +149,13 @@ export function useDashboardState() {
       )
     );
     setAnomalyMachineId(target.id);
-    setConfidence(88 + Math.floor(Math.random() * 10));
-    addLog(`⚠️ Anomaly detected in ${target.name}`, "anomaly");
+    const baseConf = 88 + Math.floor(Math.random() * 10);
+    const reduction = getMicConfidenceReduction(target.zone);
+    setConfidence(Math.max(baseConf - reduction, 50));
+    setAvgNoise(88 + Math.floor(Math.random() * 12));
+    addLog(`Anomaly detected in ${target.name} (Zone ${target.zone})`, "anomaly", "active");
     setTimeout(() => setIsPlaying(false), 1000);
-  }, [addLog]);
+  }, [addLog, getMicConfidenceReduction]);
 
   const replayScenario = useCallback(() => {
     if (replayTimeoutRef.current) return;
@@ -113,14 +171,36 @@ export function useDashboardState() {
     }, 3000);
   }, [triggerNormal, triggerFault, addLog]);
 
+  // Filter by zone
+  const filteredMachines = selectedZone === "all" ? machines : machines.filter((m) => m.zone === selectedZone);
+  const filteredMicrophones = selectedZone === "all" ? microphones : microphones.filter((m) => m.zone === selectedZone);
+
+  // KPIs
+  const zonesMonitored = new Set(machines.map((m) => m.zone)).size;
+  const machinesInAnomaly = machines.filter((m) => m.status === "anomaly").length;
+  const activeAlerts = logs.filter((l) => l.alertState === "active").length;
+  const microphonesOffline = microphones.filter((m) => m.health === "offline").length;
+
   return {
-    machines,
+    machines: filteredMachines,
+    allMachines: machines,
+    microphones: filteredMicrophones,
+    allMicrophones: microphones,
     logs,
     anomalyMachineId,
     isPlaying,
     confidence,
+    selectedZone,
+    setSelectedZone,
+    viewRole,
+    setViewRole,
+    temperature,
+    avgNoise,
     triggerNormal,
     triggerFault,
     replayScenario,
+    acknowledgeAlert,
+    resolveAlert,
+    kpis: { zonesMonitored, machinesInAnomaly, activeAlerts, microphonesOffline },
   };
 }
