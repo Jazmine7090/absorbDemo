@@ -15,10 +15,10 @@ const TopBar = ({ hasAnomaly }: TopBarProps) => {
   }, []);
 
   return (
-    <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/50 backdrop-blur-sm">
+    <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-card shadow-sm">
       <div className="flex items-center gap-4">
         <h1 className="text-xl font-bold tracking-tight text-foreground">
-          ABSØRB
+          ABSORB
         </h1>
         <span className="text-xs text-muted-foreground tracking-widest uppercase">
           AI Sound Monitoring
@@ -26,14 +26,6 @@ const TopBar = ({ hasAnomaly }: TopBarProps) => {
       </div>
 
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Thermometer className="w-4 h-4" />
-          <span>42°C</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Volume2 className="w-4 h-4" />
-          <span>87 dB</span>
-        </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="w-4 h-4" />
           <span>{time.toLocaleTimeString("en-US", { hour12: false })}</span>

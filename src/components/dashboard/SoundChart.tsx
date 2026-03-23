@@ -37,13 +37,13 @@ const SoundChart = ({ hasAnomaly }: SoundChartProps) => {
         <div className="h-[180px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={areaData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 22%)" />
-              <XAxis dataKey="t" tick={{ fontSize: 10, fill: "hsl(215, 15%, 55%)" }} />
-              <YAxis tick={{ fontSize: 10, fill: "hsl(215, 15%, 55%)" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 15%, 88%)" />
+              <XAxis dataKey="t" tick={{ fontSize: 10, fill: "hsl(215, 12%, 50%)" }} />
+              <YAxis tick={{ fontSize: 10, fill: "hsl(215, 12%, 50%)" }} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "hsl(220, 18%, 13%)",
-                  border: "1px solid hsl(220, 15%, 22%)",
+                  backgroundColor: "hsl(0, 0%, 100%)",
+                  border: "1px solid hsl(215, 15%, 88%)",
                   borderRadius: "8px",
                   fontSize: 12,
                 }}
@@ -51,8 +51,8 @@ const SoundChart = ({ hasAnomaly }: SoundChartProps) => {
               <Area
                 type="monotone"
                 dataKey="normal"
-                stroke="hsl(160, 60%, 45%)"
-                fill="hsl(160, 60%, 45%)"
+                stroke="hsl(160, 55%, 38%)"
+                fill="hsl(160, 55%, 38%)"
                 fillOpacity={0.15}
                 strokeWidth={2}
                 name="Normal Pattern"
@@ -60,8 +60,8 @@ const SoundChart = ({ hasAnomaly }: SoundChartProps) => {
               <Area
                 type="monotone"
                 dataKey="current"
-                stroke={hasAnomaly ? "hsl(0, 72%, 55%)" : "hsl(200, 70%, 50%)"}
-                fill={hasAnomaly ? "hsl(0, 72%, 55%)" : "hsl(200, 70%, 50%)"}
+                stroke={hasAnomaly ? "hsl(0, 72%, 50%)" : "hsl(200, 70%, 50%)"}
+                fill={hasAnomaly ? "hsl(0, 72%, 50%)" : "hsl(200, 70%, 50%)"}
                 fillOpacity={0.1}
                 strokeWidth={2}
                 name="Current Pattern"
@@ -77,7 +77,7 @@ const SoundChart = ({ hasAnomaly }: SoundChartProps) => {
               <BarChart data={freqData}>
                 <Bar
                   dataKey="amplitude"
-                  fill={hasAnomaly ? "hsl(0, 72%, 55%)" : "hsl(160, 60%, 45%)"}
+                  fill={hasAnomaly ? "hsl(0, 72%, 50%)" : "hsl(160, 55%, 38%)"}
                   radius={[2, 2, 0, 0]}
                   fillOpacity={0.7}
                 />

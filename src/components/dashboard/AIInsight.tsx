@@ -6,9 +6,10 @@ interface AIInsightProps {
   hasAnomaly: boolean;
   confidence: number;
   machineName?: string;
+  micIssues?: boolean;
 }
 
-const AIInsight = ({ hasAnomaly, confidence, machineName }: AIInsightProps) => (
+const AIInsight = ({ hasAnomaly, confidence, machineName, micIssues }: AIInsightProps) => (
   <Card>
     <CardHeader className="pb-3">
       <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -54,9 +55,12 @@ const AIInsight = ({ hasAnomaly, confidence, machineName }: AIInsightProps) => (
                   </div>
                   <span className="text-sm font-bold text-danger">{confidence}%</span>
                 </div>
+                {micIssues && (
+                  <p className="text-[10px] text-warning mt-1">Confidence reduced due to sensor issues in this zone.</p>
+                )}
               </div>
 
-              <div className="p-3 rounded-lg bg-danger/10 border border-danger/20">
+              <div className="p-3 rounded-lg bg-danger/8 border border-danger/20">
                 <p className="text-xs text-muted-foreground mb-1">Recommended Action</p>
                 <p className="text-sm text-foreground">
                   Inspect {machineName || "affected machine"} immediately. Unusual sound pattern detected — possible bearing failure.
@@ -66,7 +70,7 @@ const AIInsight = ({ hasAnomaly, confidence, machineName }: AIInsightProps) => (
           )}
 
           {!hasAnomaly && (
-            <div className="p-3 rounded-lg bg-success/10 border border-success/20">
+            <div className="p-3 rounded-lg bg-success/8 border border-success/20">
               <p className="text-xs text-muted-foreground mb-1">Status</p>
               <p className="text-sm text-foreground">
                 All machines operating within normal sound parameters. No action required.
