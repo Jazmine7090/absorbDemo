@@ -1,8 +1,17 @@
 import { motion } from "framer-motion";
+import { HardHat, Truck, Wrench, Container } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import Waveform from "./Waveform";
 import type { Machine } from "@/hooks/useDashboardState";
+
+const iconMap: Record<string, React.ElementType> = {
+  hardhat: HardHat,
+  crane: Container,
+  tractor: Truck,
+  truck: Truck,
+  wrench: Wrench,
+};
 
 interface MachineCardProps {
   machine: Machine;
@@ -10,6 +19,7 @@ interface MachineCardProps {
 
 const MachineCard = ({ machine }: MachineCardProps) => {
   const isAnomaly = machine.status === "anomaly";
+  const IconComp = iconMap[machine.icon] || Wrench;
 
   return (
     <motion.div
@@ -26,17 +36,19 @@ const MachineCard = ({ machine }: MachineCardProps) => {
         {isAnomaly && (
           <motion.div
             className="absolute inset-0 bg-danger/5"
-            animate={{ opacity: [0, 0.1, 0] }}
+            animate={{ opacity: [0, 0.15, 0] }}
             transition={{ repeat: Infinity, duration: 1.5 }}
           />
         )}
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">{machine.icon}</span>
+              <div className={`p-1.5 rounded-md ${isAnomaly ? "bg-danger/10" : "bg-primary/10"}`}>
+                <IconComp className={`w-5 h-5 ${isAnomaly ? "text-danger" : "text-primary"}`} />
+              </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">{machine.name}</p>
-                <p className="text-xs text-muted-foreground capitalize">{machine.type}</p>
+                <p className="text-[10px] text-muted-foreground capitalize">Zone {machine.zone} · {machine.type}</p>
               </div>
             </div>
             <Badge
