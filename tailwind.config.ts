@@ -59,6 +59,16 @@ export default {
           DEFAULT: "hsl(var(--danger))",
           foreground: "hsl(var(--danger-foreground))",
         },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
+        quality: {
+          excellent: "hsl(var(--quality-excellent))",
+          good: "hsl(var(--quality-good))",
+          fair: "hsl(var(--quality-fair))",
+          poor: "hsl(var(--quality-poor))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
