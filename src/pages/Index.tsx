@@ -12,7 +12,9 @@ import KPISummaryBar from "@/components/dashboard/KPISummaryBar";
 import MicrophonePanel from "@/components/dashboard/MicrophonePanel";
 import EnvironmentalCard from "@/components/dashboard/EnvironmentalCard";
 import ZoneRoleToggle from "@/components/dashboard/ZoneRoleToggle";
+import AudioQualityPanel from "@/components/dashboard/AudioQualityPanel";
 import { useDashboardState } from "@/hooks/useDashboardState";
+import { useAudioQuality } from "@/hooks/useAudioQuality";
 
 const Index = () => {
   const {
@@ -55,6 +57,9 @@ const Index = () => {
 
   const isOperator = viewRole === "operator";
 
+  // Audio quality uses all machines/mics (not filtered) for zone-level assessment
+  const audioQualities = useAudioQuality(allMachines, allMicrophones, avgNoise);
+
   return (
     <div className="min-h-screen bg-background">
       <TopBar hasAnomaly={hasAnomaly} />
@@ -78,7 +83,7 @@ const Index = () => {
           <KPISummaryBar {...kpis} />
         </div>
 
-        {/* Machine Grid - shown in both views */}
+        {/* Machine Grid */}
         <section>
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
             Machine Monitoring {selectedZone !== "all" ? `— Zone ${selectedZone}` : ""}
@@ -89,6 +94,9 @@ const Index = () => {
             ))}
           </div>
         </section>
+
+        {/* Audio Quality Assessment */}
+        <AudioQualityPanel qualities={audioQualities} />
 
         {/* Bottom Panels */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

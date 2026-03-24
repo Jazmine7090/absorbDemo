@@ -23,7 +23,7 @@ const AnomalyBanner = ({ machineName, onDismiss }: AnomalyBannerProps) => (
             <AlertTriangle className="w-5 h-5 text-danger" />
           </motion.div>
           <p className="text-sm font-medium text-danger">
-            ⚠️ Anomaly detected in {machineName} — Immediate inspection recommended
+            Anomaly detected in {machineName} — Immediate inspection recommended
           </p>
         </div>
         <button onClick={onDismiss} className="text-danger/60 hover:text-danger transition-colors">
