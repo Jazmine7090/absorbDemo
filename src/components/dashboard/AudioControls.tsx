@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Play, AlertTriangle, RotateCcw } from "lucide-react";
+import { Play, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -13,14 +13,17 @@ interface AudioControlsProps {
 const AudioControls = ({ onNormal, onFault, onReplay, isPlaying }: AudioControlsProps) => (
   <Card>
     <CardHeader className="pb-3">
-      <CardTitle className="text-sm font-semibold text-foreground">Audio Simulation</CardTitle>
+      <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+        <span className="inline-block w-2 h-2 rounded-full bg-accent" />
+        Audio Simulation
+      </CardTitle>
     </CardHeader>
     <CardContent className="space-y-3">
       <motion.div whileTap={{ scale: 0.97 }}>
         <Button
           onClick={onNormal}
           disabled={isPlaying}
-          className="w-full bg-success hover:bg-success/90 text-success-foreground"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           <Play className="w-4 h-4 mr-2" />
           Play Normal Sound
@@ -35,17 +38,6 @@ const AudioControls = ({ onNormal, onFault, onReplay, isPlaying }: AudioControls
         >
           <AlertTriangle className="w-4 h-4 mr-2" />
           Play Faulty Sound
-        </Button>
-      </motion.div>
-      <motion.div whileTap={{ scale: 0.97 }}>
-        <Button
-          onClick={onReplay}
-          disabled={isPlaying}
-          variant="secondary"
-          className="w-full"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" />
-          Replay Scenario
         </Button>
       </motion.div>
     </CardContent>

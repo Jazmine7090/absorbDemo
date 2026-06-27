@@ -31,7 +31,7 @@ const Waveform = ({ isAnomaly, width = 120, height = 40 }: WaveformProps) => {
           h = (Math.sin(t) * 0.3 + 0.5) * height * 0.6 + height * 0.1;
         }
         const x = i * (barW + 1);
-        const color = isAnomaly ? "hsl(0, 72%, 50%)" : "hsl(160, 55%, 38%)";
+        const color = isAnomaly ? "hsl(0, 72%, 50%)" : "hsl(191, 83%, 46%)";
         ctx.fillStyle = color;
         ctx.fillRect(x, height - h, barW, h);
       }

@@ -53,7 +53,7 @@ const MachineCard = ({ machine }: MachineCardProps) => {
             </div>
             <Badge
               variant={isAnomaly ? "destructive" : "default"}
-              className={isAnomaly ? "" : "bg-success text-success-foreground"}
+              className={isAnomaly ? "" : "bg-accent text-accent-foreground"}
             >
               {isAnomaly ? "Anomaly" : "Normal"}
             </Badge>
@@ -76,7 +76,7 @@ const MachineCard = ({ machine }: MachineCardProps) => {
 
           <div className="w-full bg-secondary rounded-full h-1.5">
             <motion.div
-              className={`h-1.5 rounded-full ${isAnomaly ? "bg-danger" : "bg-success"}`}
+              className={`h-1.5 rounded-full ${isAnomaly ? "bg-danger" : "bg-accent"}`}
               initial={{ width: 0 }}
               animate={{ width: `${Math.min((machine.dbLevel / 100) * 100, 100)}%` }}
               transition={{ duration: 0.6 }}

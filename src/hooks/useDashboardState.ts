@@ -23,6 +23,7 @@ export interface Microphone {
   zone: Zone;
   health: MicHealth;
   battery: number;
+  processorBattery: number;
   connectivity: MicConnectivity;
   lastCalibration: string;
 }
@@ -45,12 +46,11 @@ const INITIAL_MACHINES: Machine[] = [
 ];
 
 const INITIAL_MICROPHONES: Microphone[] = [
-  { id: "mic1", name: "Mic A – North Edge", zone: "A", health: "healthy", battery: 85, connectivity: "online", lastCalibration: "2026-03-20" },
-  { id: "mic2", name: "Mic B – East Side", zone: "A", health: "healthy", battery: 72, connectivity: "online", lastCalibration: "2026-03-18" },
-  { id: "mic3", name: "Mic C – South Edge", zone: "B", health: "degraded", battery: 45, connectivity: "intermittent", lastCalibration: "2026-03-15" },
-  { id: "mic4", name: "Mic D – West Side", zone: "B", health: "healthy", battery: 91, connectivity: "online", lastCalibration: "2026-03-21" },
-  { id: "mic5", name: "Mic E – Center", zone: "C", health: "healthy", battery: 22, connectivity: "online", lastCalibration: "2026-03-19" },
-  { id: "mic6", name: "Mic F – North Side", zone: "C", health: "offline", battery: 5, connectivity: "offline", lastCalibration: "2026-03-10" },
+  { id: "mic1", name: "Mic A – North Edge", zone: "A", health: "healthy", battery: 85, processorBattery: 78, connectivity: "online", lastCalibration: "2026-03-20" },
+  { id: "mic2", name: "Mic B – East Side", zone: "A", health: "healthy", battery: 72, processorBattery: 65, connectivity: "online", lastCalibration: "2026-03-18" },
+  { id: "mic3", name: "Mic C – South Edge", zone: "B", health: "degraded", battery: 45, processorBattery: 38, connectivity: "intermittent", lastCalibration: "2026-03-15" },
+  { id: "mic4", name: "Mic D – West Side", zone: "B", health: "healthy", battery: 91, processorBattery: 88, connectivity: "online", lastCalibration: "2026-03-21" },
+  { id: "mic6", name: "Mic F – North Side", zone: "C", health: "offline", battery: 5, processorBattery: 3, connectivity: "offline", lastCalibration: "2026-03-10" },
 ];
 
 const getTimeString = () => {
@@ -60,19 +60,22 @@ const getTimeString = () => {
 
 export function useDashboardState() {
   const [machines, setMachines] = useState<Machine[]>(INITIAL_MACHINES);
-  const [microphones, setMicrophones] = useState<Microphone[]>(INITIAL_MICROPHONES);
+  const [microphones] = useState<Microphone[]>(INITIAL_MICROPHONES);
   const [logs, setLogs] = useState<LogEntry[]>([
     { id: "init", time: getTimeString(), message: "System initialized — All machines nominal", type: "info" },
   ]);
   const [anomalyMachineId, setAnomalyMachineId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoopingFault, setIsLoopingFault] = useState(false);
   const [confidence, setConfidence] = useState(0);
   const [selectedZone, setSelectedZone] = useState<Zone | "all">("all");
   const [viewRole, setViewRole] = useState<ViewRole>("operator");
   const [temperature] = useState(42);
   const [avgNoise, setAvgNoise] = useState(87);
+
   const audioCtxRef = useRef<AudioContext | null>(null);
   const replayTimeoutRef = useRef<number | null>(null);
+  const faultLoopRef = useRef<number | null>(null);
 
   const addLog = useCallback((message: string, type: LogEntry["type"], alertState?: AlertState) => {
     setLogs((prev) => [{ id: crypto.randomUUID(), time: getTimeString(), message, type, alertState }, ...prev].slice(0, 50));
@@ -92,6 +95,32 @@ export function useDashboardState() {
     );
   }, []);
 
+  // stopFaultLoop must be declared before any callback that depends on it
+  const stopFaultLoop = useCallback(() => {
+    if (faultLoopRef.current) {
+      clearInterval(faultLoopRef.current);
+      faultLoopRef.current = null;
+    }
+    setIsLoopingFault(false);
+  }, []);
+
+  const acknowledgeActiveAlert = useCallback(() => {
+    stopFaultLoop();
+    // Reset dashboard to normal
+    setAnomalyMachineId(null);
+    setMachines(INITIAL_MACHINES.map((m) => ({ ...m, dbLevel: 65 + Math.random() * 15 })));
+    setConfidence(0);
+    setAvgNoise(75 + Math.floor(Math.random() * 15));
+    // Mark active alert as acknowledged in log
+    setLogs((prev) => {
+      const activeLog = prev.find((l) => l.alertState === "active");
+      if (!activeLog) return prev;
+      return prev.map((l) =>
+        l.id === activeLog.id ? { ...l, alertState: "acknowledged" as AlertState } : l
+      );
+    });
+  }, [stopFaultLoop]);
+
   const getAudioCtx = () => {
     if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
     return audioCtxRef.current;
@@ -103,31 +132,40 @@ export function useDashboardState() {
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
-    gain.gain.value = 0.15;
 
     if (faulty) {
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
       osc.type = "sawtooth";
       osc.frequency.setValueAtTime(120, ctx.currentTime);
-      osc.frequency.linearRampToValueAtTime(400, ctx.currentTime + 0.3);
-      osc.frequency.linearRampToValueAtTime(80, ctx.currentTime + 0.6);
+      osc.frequency.linearRampToValueAtTime(420, ctx.currentTime + 0.5);
+      osc.frequency.linearRampToValueAtTime(80, ctx.currentTime + 1.0);
+      osc.frequency.linearRampToValueAtTime(360, ctx.currentTime + 1.5);
+      osc.frequency.linearRampToValueAtTime(90, ctx.currentTime + 2.0);
+      osc.frequency.linearRampToValueAtTime(300, ctx.currentTime + 2.5);
+      osc.frequency.linearRampToValueAtTime(60, ctx.currentTime + 3.0);
+      osc.frequency.linearRampToValueAtTime(250, ctx.currentTime + 3.5);
+      osc.start();
+      gain.gain.setValueAtTime(0.18, ctx.currentTime + 3.0);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4.5);
+      osc.stop(ctx.currentTime + 4.5);
     } else {
+      gain.gain.value = 0.15;
       osc.type = "sine";
       osc.frequency.value = 180;
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1);
+      osc.stop(ctx.currentTime + 1);
     }
-
-    osc.start();
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1);
-    osc.stop(ctx.currentTime + 1);
   };
 
-  // Compute mic-based confidence reduction
   const getMicConfidenceReduction = useCallback((zone?: Zone) => {
     const zoneMics = zone ? microphones.filter((m) => m.zone === zone) : microphones;
     const offlineOrLow = zoneMics.filter((m) => m.health === "offline" || m.battery < 30);
-    return offlineOrLow.length * 5; // reduce confidence by 5% per degraded mic
+    return offlineOrLow.length * 5;
   }, [microphones]);
 
   const triggerNormal = useCallback(() => {
+    stopFaultLoop();
     setIsPlaying(true);
     playSound(false);
     setMachines(INITIAL_MACHINES.map((m) => ({ ...m, dbLevel: 65 + Math.random() * 15 })));
@@ -136,16 +174,19 @@ export function useDashboardState() {
     setAvgNoise(75 + Math.floor(Math.random() * 15));
     addLog("Normal sound played — All systems nominal", "normal");
     setTimeout(() => setIsPlaying(false), 1000);
-  }, [addLog]);
+  }, [addLog, stopFaultLoop]);
 
   const triggerFault = useCallback(() => {
+    stopFaultLoop();
     setIsPlaying(true);
     playSound(true);
     const targetIdx = Math.floor(Math.random() * INITIAL_MACHINES.length);
     const target = INITIAL_MACHINES[targetIdx];
     setMachines((prev) =>
       prev.map((m, i) =>
-        i === targetIdx ? { ...m, status: "anomaly" as const, dbLevel: 92 + Math.random() * 8 } : { ...m, status: "normal" as const }
+        i === targetIdx
+          ? { ...m, status: "anomaly" as const, dbLevel: 92 + Math.random() * 8 }
+          : { ...m, status: "normal" as const }
       )
     );
     setAnomalyMachineId(target.id);
@@ -154,8 +195,13 @@ export function useDashboardState() {
     setConfidence(Math.max(baseConf - reduction, 50));
     setAvgNoise(88 + Math.floor(Math.random() * 12));
     addLog(`Anomaly detected in ${target.name} (Zone ${target.zone})`, "anomaly", "active");
-    setTimeout(() => setIsPlaying(false), 1000);
-  }, [addLog, getMicConfidenceReduction]);
+    setTimeout(() => setIsPlaying(false), 4500);
+    // Loop fault audio every 5.5s until acknowledged
+    setIsLoopingFault(true);
+    faultLoopRef.current = window.setInterval(() => {
+      playSound(true);
+    }, 5500);
+  }, [addLog, getMicConfidenceReduction, stopFaultLoop]);
 
   const replayScenario = useCallback(() => {
     if (replayTimeoutRef.current) return;
@@ -167,15 +213,13 @@ export function useDashboardState() {
         triggerNormal();
         addLog("Replay scenario completed", "info");
         replayTimeoutRef.current = null;
-      }, 4000);
+      }, 5500);
     }, 3000);
   }, [triggerNormal, triggerFault, addLog]);
 
-  // Filter by zone
   const filteredMachines = selectedZone === "all" ? machines : machines.filter((m) => m.zone === selectedZone);
   const filteredMicrophones = selectedZone === "all" ? microphones : microphones.filter((m) => m.zone === selectedZone);
 
-  // KPIs
   const zonesMonitored = new Set(machines.map((m) => m.zone)).size;
   const machinesInAnomaly = machines.filter((m) => m.status === "anomaly").length;
   const activeAlerts = logs.filter((l) => l.alertState === "active").length;
@@ -189,6 +233,7 @@ export function useDashboardState() {
     logs,
     anomalyMachineId,
     isPlaying,
+    isLoopingFault,
     confidence,
     selectedZone,
     setSelectedZone,
@@ -200,6 +245,7 @@ export function useDashboardState() {
     triggerFault,
     replayScenario,
     acknowledgeAlert,
+    acknowledgeActiveAlert,
     resolveAlert,
     kpis: { zonesMonitored, machinesInAnomaly, activeAlerts, microphonesOffline },
   };

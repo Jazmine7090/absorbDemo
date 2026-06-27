@@ -11,11 +11,12 @@ interface AlertLogProps {
   logs: LogEntry[];
   onAcknowledge?: (logId: string, note?: string) => void;
   onResolve?: (logId: string) => void;
+  canResolve?: boolean;
 }
 
 type LogFilter = "all" | "alerts" | "sensor";
 
-const AlertLog = ({ logs, onAcknowledge, onResolve }: AlertLogProps) => {
+const AlertLog = ({ logs, onAcknowledge, onResolve, canResolve = false }: AlertLogProps) => {
   const [filter, setFilter] = useState<LogFilter>("all");
   const [noteInput, setNoteInput] = useState<Record<string, string>>({});
   const [showNoteFor, setShowNoteFor] = useState<string | null>(null);
@@ -59,6 +60,11 @@ const AlertLog = ({ logs, onAcknowledge, onResolve }: AlertLogProps) => {
           <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Clock className="w-4 h-4 text-primary" />
             Maintenance & Event Log
+            {!canResolve && (
+              <span className="text-[9px] font-normal px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                Acknowledge only
+              </span>
+            )}
           </CardTitle>
           <div className="flex items-center gap-1">
             <Filter className="w-3 h-3 text-muted-foreground" />
@@ -157,7 +163,7 @@ const AlertLog = ({ logs, onAcknowledge, onResolve }: AlertLogProps) => {
                   </div>
                 )}
 
-                {log.alertState === "acknowledged" && onResolve && (
+                {log.alertState === "acknowledged" && onResolve && canResolve && (
                   <div className="ml-6 mt-1.5">
                     <Button
                       size="sm"
@@ -169,6 +175,11 @@ const AlertLog = ({ logs, onAcknowledge, onResolve }: AlertLogProps) => {
                       Mark Resolved
                     </Button>
                   </div>
+                )}
+                {log.alertState === "acknowledged" && !canResolve && (
+                  <p className="ml-6 mt-1 text-[9px] text-muted-foreground italic">
+                    Manager approval required to resolve
+                  </p>
                 )}
               </motion.div>
             ))}

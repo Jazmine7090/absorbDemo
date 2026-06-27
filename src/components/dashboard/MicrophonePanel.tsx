@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Mic, Battery, Wifi, WifiOff, AlertTriangle, Calendar } from "lucide-react";
+import { Mic, Battery, Wifi, WifiOff, AlertTriangle, Calendar, Cpu } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Microphone } from "@/hooks/useDashboardState";
@@ -43,7 +43,7 @@ const getConnectivityIcon = (connectivity: Microphone["connectivity"]) => {
 };
 
 const MicrophonePanel = ({ microphones }: MicrophonePanelProps) => {
-  const hasIssues = microphones.some((m) => m.health === "offline" || m.battery < 30);
+  const hasIssues = microphones.some((m) => m.health === "offline" || m.battery < 30 || m.processorBattery < 30);
 
   return (
     <Card>
@@ -100,7 +100,14 @@ const MicrophonePanel = ({ microphones }: MicrophonePanelProps) => {
               <div className="w-14 h-1.5 bg-secondary rounded-full overflow-hidden">
                 <div className={`h-full rounded-full ${getBatteryBg(mic.battery)}`} style={{ width: `${mic.battery}%` }} />
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Cpu className={`w-3.5 h-3.5 ${getBatteryColor(mic.processorBattery)}`} />
+                <span className={`text-[10px] font-semibold ${getBatteryColor(mic.processorBattery)}`}>{mic.processorBattery}%</span>
+              </div>
+              <div className="w-14 h-1.5 bg-secondary rounded-full overflow-hidden">
+                <div className={`h-full rounded-full ${getBatteryBg(mic.processorBattery)}`} style={{ width: `${mic.processorBattery}%` }} />
+              </div>
+              <div className="flex items-center gap-1 mt-0.5">
                 <Calendar className="w-2.5 h-2.5 text-muted-foreground" />
                 <span className="text-[9px] text-muted-foreground">{mic.lastCalibration}</span>
               </div>
