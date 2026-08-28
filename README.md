@@ -1,10 +1,18 @@
 # absorbDemo
 
-A modern, full-featured React TypeScript application built with Vite, shadcn/ui, and Tailwind CSS. This project demonstrates a production-ready setup with component libraries, form handling, data visualization, and comprehensive UI patterns.
+## Project Overview
 
-## Overview
+**ABSØRB** is an innovative smart noise barrier designed to reduce sound levels through advanced insulation and absorption layers, minimizing noise impact on workers and surrounding communities. The barrier features a groundbreaking layer made from processed date pits, which efficiently absorbs sound frequencies while supporting environmental sustainability.
 
-**absorbDemo** is a TypeScript-based React application designed to showcase best practices in modern web development. It combines powerful tools and libraries to create a scalable, maintainable, and visually polished user interface.
+Additionally, ABSØRB integrates an intelligent anomaly detection system that analyzes sound patterns to detect any unusual changes in equipment sounds before failures or incidents occur. The barrier is 100% reusable and designed to withstand harsh construction site conditions.
+
+This repository contains the **demo dashboard** showcasing the ABSØRB project concept and its capabilities.
+
+---
+
+## Technical Overview
+
+**absorbDemo** is a TypeScript-based React application designed to showcase best practices in modern web development. It combines powerful tools and libraries to create a scalable, maintainable, and feature-rich dashboard.
 
 ## Tech Stack
 
