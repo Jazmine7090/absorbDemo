@@ -113,32 +113,8 @@ absorbDemo/
 └── README.md              # This file
 ```
 
-## Language Composition
-
-- **TypeScript**: 98.1%
-- **CSS**: 1.2%
-- **Other**: 0.7%
-
-## Available Scripts
-
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
-| `npm run build:dev` | Development build |
-| `npm run lint` | Run ESLint |
-| `npm run preview` | Preview production build |
-| `npm test` | Run tests once |
-| `npm run test:watch` | Run tests in watch mode |
-
 ## Contributing
 
 This is a private repository. For contributions, please refer to the project's contribution guidelines.
 
-## License
 
-See LICENSE file for details.
-
----
-
-Built with ❤️ using modern web technologies.
